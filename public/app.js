@@ -229,6 +229,125 @@ function escapeHtml(s) {
   return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 }
 
+const CHECKS_KEY = "iml.checks.v1";
+
+function getChecks() {
+  try {
+    return JSON.parse(localStorage.getItem(CHECKS_KEY)) || {};
+  } catch {
+    return {};
+  }
+}
+
+function saveCheck(url, data) {
+  const checks = getChecks();
+  checks[url] = { at: new Date().toISOString(), status: data.status, canonicalOk: data.canonicalOk, noindex: data.noindex };
+  localStorage.setItem(CHECKS_KEY, JSON.stringify(checks));
+}
+
+function buildLinkIndex() {
+  const map = {};
+  for (const record of getHistory()) {
+    for (const url of record.urls || []) {
+      if (!map[url]) map[url] = { url, first: record.at, last: record.at, count: 0 };
+      map[url].count += 1;
+      if (record.at > map[url].last) map[url].last = record.at;
+      if (record.at < map[url].first) map[url].first = record.at;
+    }
+  }
+  return Object.values(map).sort((a, b) => b.last.localeCompare(a.last));
+}
+
+function checkBadge(check) {
+  if (!check) return '<span class="tag">not checked</span>';
+  if (check.status === 200 && check.canonicalOk && !check.noindex) return '<span class="tag ok">200 · indexable</span>';
+  if (check.status === 200 && check.noindex) return '<span class="tag bad">noindex</span>';
+  if (check.status === 200) return '<span class="tag warn">200 · canonical off</span>';
+  return '<span class="tag bad">HTTP ' + check.status + "</span>";
+}
+
+function renderLinks() {
+  const links = buildLinkIndex();
+  const checks = getChecks();
+  const wrap = $("linksWrap");
+  if (!links.length) {
+    wrap.classList.add("hidden");
+    $("linksSummary").textContent = "No links submitted yet.";
+    return;
+  }
+  wrap.classList.remove("hidden");
+  const checked = links.filter((l) => checks[l.url]);
+  const indexable = checked.filter((l) => checks[l.url].status === 200 && checks[l.url].canonicalOk && !checks[l.url].noindex);
+  $("linksSummary").textContent = links.length + " links · " + indexable.length + " verified indexable · " + checked.length + " checked";
+  $("linksBody").innerHTML = links
+    .map(
+      (l) =>
+        "<tr>" +
+        '<td class="url">' + escapeHtml(l.url.replace("https://" + HOST, "")) + "</td>" +
+        '<td class="muted">' + fmtTime(l.last) + "</td>" +
+        "<td>" + checkBadge(checks[l.url]) + "</td>" +
+        '<td><button class="ghost link-check" data-url="' + escapeHtml(l.url) + '" type="button">Check</button></td>' +
+        "</tr>"
+    )
+    .join("");
+}
+
+async function checkLink(url) {
+  const result = await api("/api/check", { url });
+  if (result.status) saveCheck(url, result);
+}
+
+async function doLinkCheck(button) {
+  button.disabled = true;
+  button.textContent = "…";
+  try {
+    await checkLink(button.dataset.url);
+  } catch (err) {
+    button.textContent = "Failed";
+  }
+  renderLinks();
+}
+
+async function checkAllLinks() {
+  const links = buildLinkIndex();
+  if (!links.length) return;
+  const button = $("checkAllBtn");
+  button.disabled = true;
+  const queue = links.map((l) => l.url);
+  let done = 0;
+  const worker = async () => {
+    while (queue.length) {
+      const url = queue.shift();
+      button.textContent = "Checking " + ++done + "/" + links.length;
+      try {
+        await checkLink(url);
+      } catch (err) {
+        /* keep going */
+      }
+      renderLinks();
+    }
+  };
+  await Promise.all([worker(), worker(), worker()]);
+  button.textContent = "Check all";
+  button.disabled = false;
+}
+
+function exportCsv() {
+  const checks = getChecks();
+  const rows = [["url", "last_submitted", "submissions", "http_status", "canonical_ok", "noindex", "checked_at"]];
+  for (const link of buildLinkIndex()) {
+    const check = checks[link.url] || {};
+    rows.push([link.url, link.last, link.count, check.status ?? "", check.canonicalOk ?? "", check.noindex ?? "", check.at || ""]);
+  }
+  const csv = rows.map((row) => row.map((v) => '"' + String(v).replace(/"/g, '""') + '"').join(",")).join("\n");
+  const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "index-my-link.csv";
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 async function loadSitemap() {
   const btn = $("loadSitemap");
   btn.disabled = true;
@@ -332,6 +451,12 @@ document.addEventListener("click", (e) => {
   if (tab) {
     document.querySelectorAll(".tab").forEach((t) => t.classList.toggle("active", t === tab));
     document.querySelectorAll(".panel").forEach((p) => p.classList.toggle("active", p.id === "panel-" + tab.dataset.tab));
+    if (tab.dataset.tab === "links") renderLinks();
+    return;
+  }
+  const linkCheckBtn = e.target.closest(".link-check");
+  if (linkCheckBtn) {
+    doLinkCheck(linkCheckBtn);
     return;
   }
   const inspectBtn = e.target.closest(".inspect");
@@ -379,6 +504,8 @@ $("submitSelected").addEventListener("click", () => {
   });
 });
 $("refreshHistory").addEventListener("click", loadHistory);
+$("checkAllBtn").addEventListener("click", checkAllLinks);
+$("exportBtn").addEventListener("click", exportCsv);
 $("keyPill").addEventListener("click", openKeyModal);
 $("googleCard").addEventListener("click", () => {
   const collapsed = $("googleHelp").classList.toggle("hidden");
@@ -395,4 +522,5 @@ $("keyInput").addEventListener("keydown", (e) => {
   const s = await refreshKey();
   if (!s.hasKey) openKeyModal();
   loadHistory();
+  renderLinks();
 })();

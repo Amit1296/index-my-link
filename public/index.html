@@ -47,6 +47,7 @@
   <nav class="tabs" role="tablist">
     <button class="tab active" data-tab="submit" role="tab">Submit URLs</button>
     <button class="tab" data-tab="sitemap" role="tab">From sitemap</button>
+    <button class="tab" data-tab="links" role="tab">Links</button>
     <button class="tab" data-tab="history" role="tab">History</button>
   </nav>
 
@@ -99,6 +100,33 @@
       </div>
     </div>
     <div id="sitemapResult" class="result hidden"></div>
+  </section>
+
+  <section id="panel-links" class="panel">
+    <div class="card">
+      <div class="actions spread">
+        <div>
+          <label class="label">Submitted links</label>
+          <p class="muted" id="linksSummary">No links submitted yet.</p>
+        </div>
+        <div class="actions" style="margin:0">
+          <button id="checkAllBtn" class="ghost" type="button">Check all</button>
+          <button id="exportBtn" class="ghost" type="button">Export CSV</button>
+        </div>
+      </div>
+    </div>
+    <div class="table-wrap" id="linksWrap">
+      <table>
+        <thead>
+          <tr><th>URL</th><th>Last submitted</th><th>Page check</th><th></th></tr>
+        </thead>
+        <tbody id="linksBody"></tbody>
+      </table>
+    </div>
+    <p class="footnote">
+      "Page check" fetches the URL as Googlebot and confirms it is reachable, self-canonical and not noindex.
+      It proves the page is ready to be indexed; it cannot prove Google has indexed it — only Search Console can.
+    </p>
   </section>
 
   <section id="panel-history" class="panel">
