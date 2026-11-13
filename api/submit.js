@@ -29,7 +29,7 @@ module.exports = async (req, res) => {
     id: Date.now().toString(36),
     at: new Date().toISOString(),
     urls: valid,
-    skipped: skipped.length,
+    skipped,
     batches,
     ok: batches.every((b) => b.status === 200 || b.status === 202),
   });

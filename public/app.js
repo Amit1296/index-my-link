@@ -12,14 +12,24 @@ const state = {
 };
 
 async function api(path, body) {
-  const res = await fetch(path, {
-    method: body ? "POST" : "GET",
-    headers: body ? { "Content-Type": "application/json" } : undefined,
-    body: body ? JSON.stringify(body) : undefined,
-  });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error(data.error || "Request failed (HTTP " + res.status + ")");
-  return data;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 90000);
+  try {
+    const res = await fetch(path, {
+      method: body ? "POST" : "GET",
+      headers: body ? { "Content-Type": "application/json" } : undefined,
+      body: body ? JSON.stringify(body) : undefined,
+      signal: controller.signal,
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || "Request failed (HTTP " + res.status + ")");
+    return data;
+  } catch (err) {
+    if (err.name === "AbortError") throw new Error("The free server was asleep — it can take up to a minute to wake. Click again.");
+    throw err;
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 function normalize(raw) {
@@ -27,7 +37,11 @@ function normalize(raw) {
   if (!text) return null;
   let url;
   try {
-    const abs = text.startsWith("/") ? "https://" + HOST + text : /^https?:\/\//i.test(text) ? text : "https://" + text;
+    let abs;
+    if (/^https?:\/\//i.test(text)) abs = text;
+    else if (/^www\./i.test(text)) abs = "https://" + text;
+    else if (text.startsWith("/") || /\.html?($|[?#])/i.test(text) || !text.includes(".")) abs = "https://" + HOST + "/" + text.replace(/^\/+/, "");
+    else abs = "https://" + text;
     url = new URL(abs);
   } catch {
     return null;
@@ -74,6 +88,7 @@ function statusClass(code) {
 function renderResult(targetId, record) {
   const el = $(targetId);
   const ok = record.batches.every((b) => b.status === 200 || b.status === 202);
+  const skipped = record.skipped || [];
   el.className = "result " + (ok ? "good" : "bad");
   el.innerHTML =
     "<h3>" + (ok ? "Submission accepted" : "Submission failed") + "</h3>" +
@@ -84,8 +99,12 @@ function renderResult(targetId, record) {
           '<span class="' + statusClass(b.status) + '">HTTP ' + b.status + " — " + b.message + "</span></div>"
       )
       .join("") +
-    (record.skipped ? '<p class="muted" style="margin:10px 0 0">' + record.skipped + " line(s) skipped — not gift-ora.online URLs.</p>" : "");
+    (skipped.length
+      ? '<p class="muted" style="margin:10px 0 0">Skipped, not a gift-ora.online link: ' +
+        skipped.slice(0, 4).map(escapeHtml).join(", ") + (skipped.length > 4 ? " …" : "") + "</p>"
+      : "");
   el.classList.remove("hidden");
+  el.scrollIntoView({ behavior: "smooth", block: "nearest" });
 }
 
 async function refreshKey() {
@@ -144,12 +163,15 @@ async function doSubmit(urls, targetId) {
 }
 
 function submitFromBox() {
-  const { valid } = parseBox();
+  const { valid, skipped } = parseBox();
   if (!valid.length) {
     const el = $("submitResult");
     el.className = "result bad";
-    el.innerHTML = "<h3>Nothing to submit</h3><div class='row'><span>Paste at least one gift-ora.online URL.</span></div>";
+    el.innerHTML =
+      "<h3>Nothing to submit</h3><div class='row'><span>Paste a gift-ora.online link — a full URL, or a path like /cakes.html</span></div>" +
+      (skipped.length ? '<p class="muted" style="margin:10px 0 0">Not recognised: ' + skipped.slice(0, 4).map(escapeHtml).join(", ") + "</p>" : "");
     el.classList.remove("hidden");
+    el.scrollIntoView({ behavior: "smooth", block: "nearest" });
     return;
   }
   doSubmit(valid, "submitResult");
@@ -258,7 +280,7 @@ function renderSitemap() {
 }
 
 function updateSelectedCount() {
-  $("selectedCount").textContent = state.selected.size + " selected";
+  $("selectedCount").textContent = state.selected.size === 0 ? "Tick a row first" : state.selected.size + " selected";
   $("submitSelected").disabled = state.selected.size === 0;
 }
 
