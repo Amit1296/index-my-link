@@ -44,8 +44,8 @@ async function api(path, body) {
       return await request(path, body);
     } catch (err) {
       const edge = err.status === 502 || err.status === 503 || err.status === 504;
-      if (!edge || attempt >= 2) throw err;
-      await new Promise((resolve) => setTimeout(resolve, attempt === 0 ? 3000 : 4000));
+      if (!edge || attempt >= 3) throw err;
+      await new Promise((resolve) => setTimeout(resolve, [2500, 4000, 6000][attempt]));
     }
   }
 }
