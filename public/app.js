@@ -307,7 +307,7 @@ function renderLinks() {
         "<td>" + checkBadge(checks[l.url]) + "</td>" +
         '<td class="row-actions">' +
         '<button class="ghost link-check" data-url="' + escapeHtml(l.url) + '" type="button">Check</button>' +
-        '<a class="ghost link-google" href="https://search.google.com/test/rich-results?url=' + encodeURIComponent(l.url) + '" target="_blank" rel="noopener">Google fetch</a>' +
+        '<a class="ghost link-google" title="Opens Google\'s Rich Results Test — needs a signed-in Google account" href="https://search.google.com/test/rich-results?url=' + encodeURIComponent(l.url) + '" target="_blank" rel="noopener">Google fetch</a>' +
         "</td>" +
         "</tr>"
     )
