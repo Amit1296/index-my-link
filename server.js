@@ -1,9 +1,11 @@
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
+const { rateLimit } = require("./lib/limits");
 
 const PORT = Number(process.env.PORT || 8123);
 const PUBLIC = path.join(__dirname, "public");
+const MAX_BODY = 128 * 1024;
 const TYPES = {
   ".html": "text/html; charset=utf-8",
   ".css": "text/css; charset=utf-8",
@@ -18,13 +20,26 @@ const handlers = {
   "/api/sitemap": require("./api/sitemap"),
 };
 
-function readBody(req) {
+function readBody(req, res) {
   return new Promise((resolve) => {
     let raw = "";
+    let size = 0;
+    let tooLarge = false;
     req.on("data", (chunk) => {
+      if (tooLarge) return;
+      size += chunk.length;
+      if (size > MAX_BODY) {
+        tooLarge = true;
+        res.setHeader("Connection", "close");
+        res.status(413).json({ error: "Request body too large (limit 128 KB)." });
+        req.resume();
+        resolve(null);
+        return;
+      }
       raw += chunk;
     });
     req.on("end", () => {
+      if (tooLarge) return;
       try {
         resolve(raw ? JSON.parse(raw) : {});
       } catch {
@@ -53,8 +68,15 @@ const server = http.createServer(async (req, res) => {
 
   const handler = handlers[url.pathname];
   if (handler) {
-    req.body = await readBody(req);
     res.setHeader("Cache-Control", "no-store");
+    const gate = rateLimit(req, url.pathname);
+    if (!gate.ok) {
+      res.setHeader("Retry-After", String(gate.retryAfter || 60));
+      return res.status(429).json({ error: "Too many requests — wait a minute and try again." });
+    }
+    const body = await readBody(req, res);
+    if (body === null) return;
+    req.body = body;
     return handler(req, res).catch((err) => {
       if (!res.headersSent) res.status(500).json({ error: err.message });
     });

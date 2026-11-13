@@ -31,12 +31,12 @@
     </div>
     <button class="engine warn" type="button" id="googleCard" aria-expanded="false" aria-controls="googleHelp">
       <span class="dot"></span>
-      <div><strong>Google</strong><small>No public submit API — use Search Console sitemap</small></div>
+      <div><strong>Google</strong><small>No submit API — sitemap, Inspection, per-link fetch</small></div>
     </button>
   </section>
 
   <div id="googleHelp" class="google-help hidden">
-    <p>Google accepts URL submissions from no tool, paid or free. Two manual steps cover it:</p>
+    <p>Google publishes no URL-submission API that any tool can call. Paid "Google submission" services only trigger a Googlebot fetch — they cannot force indexing. Three honest levers:</p>
     <div class="actions">
       <a class="cta primary" href="https://search.google.com/search-console/sitemaps" target="_blank" rel="noopener">Open Sitemaps</a>
       <a class="cta ghost" href="https://search.google.com/search-console/inspect" target="_blank" rel="noopener">Request indexing</a>
@@ -57,7 +57,7 @@
       <textarea id="urlBox" spellcheck="false" placeholder="https://gift-ora.online/birthday-gifts.html&#10;https://gift-ora.online/cakes.html&#10;/combo.html"></textarea>
       <div class="meta-row">
         <span id="urlCount" class="muted">0 valid · 0 skipped</span>
-        <span class="muted">Max 100 URLs per request · repeated URLs are removed</span>
+        <span class="muted">Up to 1,000 URLs per request · sent to IndexNow in batches of 100 · repeated URLs are removed</span>
       </div>
       <div class="actions">
         <button id="submitBtn" class="primary" type="button">Submit for indexing</button>
@@ -67,8 +67,9 @@
     <div id="submitResult" class="result hidden"></div>
     <p class="footnote">
       A successful submission tells Bing, Yandex, Naver and Seznam to re-crawl the page.
-      It does not force indexing, and Google does not accept URL submissions from any tool —
-      the only honest levers there are the sitemap and Search Console.
+      It does not force indexing. Google has no submission API for any tool —
+      the honest levers there are the sitemap, Search Console's Request indexing, and the
+      per-link Google fetch.
     </p>
   </section>
 
@@ -124,9 +125,9 @@
       </table>
     </div>
     <p class="footnote">
-      "Google" reads live index status from Search Console, once it is connected. "Page check" fetches the URL as
-      Googlebot and confirms it is reachable, self-canonical and not noindex — ready to be indexed, not proof that it
-      already is. "Google fetch" opens Google's own Rich Results Test, which makes Googlebot fetch the page — the same
+      "Google" reads live index status from Search Console. "Page check" fetches the URL from this server with
+      Googlebot's user-agent — no request goes to Google — and confirms it is reachable, self-canonical and not
+      noindex: ready to be indexed, not proof that it already is. "Google fetch" opens Google's own Rich Results Test, which makes Googlebot fetch the page — the same
       fetch a paid "Google submission" produces. It needs you to be signed into a Google account.
     </p>
   </section>

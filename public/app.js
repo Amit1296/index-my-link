@@ -154,7 +154,7 @@ async function doSubmit(urls, targetId) {
   } catch (err) {
     const el = $(targetId);
     el.className = "result bad";
-    el.innerHTML = "<h3>Could not submit</h3><div class='row'><span>" + err.message + "</span></div>";
+    el.innerHTML = "<h3>Could not submit</h3><div class='row'><span>" + escapeHtml(err.message) + "</span></div>";
     el.classList.remove("hidden");
   } finally {
     btn.disabled = false;
@@ -254,6 +254,7 @@ function saveCheck(url, data) {
 function buildLinkIndex() {
   const map = {};
   for (const record of getHistory()) {
+    if (!record.ok) continue;
     for (const url of record.urls || []) {
       if (!map[url]) map[url] = { url, first: record.at, last: record.at, count: 0 };
       map[url].count += 1;
@@ -266,7 +267,8 @@ function buildLinkIndex() {
 
 function checkBadge(check) {
   if (!check) return '<span class="tag">—</span>';
-  if (check.status !== 200) return '<span class="tag bad">HTTP ' + escapeHtml(check.status || "?") + "</span>";
+  if (!check.status) return '<span class="tag bad" title="The check request failed">fetch failed</span>';
+  if (check.status !== 200) return '<span class="tag bad">HTTP ' + escapeHtml(check.status) + "</span>";
   if (check.noindex) return '<span class="tag bad">noindex</span>';
   if (!check.canonicalOk) return '<span class="tag warn">canonical</span>';
   return '<span class="tag ok">Ready</span>';
@@ -316,10 +318,10 @@ function renderLinks() {
 
 async function checkLink(url) {
   const [page, google] = await Promise.all([
-    api("/api/check", { url }).catch(() => null),
+    api("/api/check", { url }).catch((err) => ({ status: 0, error: err.message })),
     api("/api/google", { url }).catch(() => null),
   ]);
-  if (page && page.status) saveCheck(url, { ...page, google: google || null });
+  saveCheck(url, { ...page, google: google || null });
 }
 
 async function doLinkCheck(button) {
@@ -460,7 +462,7 @@ async function inspect(url) {
     const flags = [];
     flags.push(row("HTTP status", String(r.status), r.status === 200 ? "status-ok" : "status-bad"));
     if (r.location) flags.push(row("Redirects to", r.location, "status-warn"));
-    flags.push(row("Googlebot fetched", r.status === 200 ? "page served directly" : "no", r.status === 200 ? "status-ok" : "status-warn"));
+    flags.push(row("Our fetch (Googlebot user-agent)", r.status === 200 ? "page served directly" : "no", r.status === 200 ? "status-ok" : "status-warn"));
     if (r.status === 200) {
       flags.push(row("Self-canonical", r.canonicalOk ? "yes" : "no — " + (r.canonical || "missing"), r.canonicalOk ? "status-ok" : "status-bad"));
       flags.push(row("Noindex", r.noindex ? "present — will not rank" : "none", r.noindex ? "status-bad" : "status-ok"));
@@ -555,8 +557,14 @@ $("keyInput").addEventListener("keydown", (e) => {
 
 (async function init() {
   updateCount();
-  const s = await refreshKey();
-  if (!s.hasKey) openKeyModal();
+  try {
+    const s = await refreshKey();
+    if (!s.hasKey) openKeyModal();
+  } catch (err) {
+    const pill = $("keyPill");
+    pill.textContent = "Server unreachable — reload to retry";
+    pill.className = "pill bad";
+  }
   loadHistory();
   renderLinks();
 })();
