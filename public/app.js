@@ -305,7 +305,10 @@ function renderLinks() {
         '<td class="muted">' + fmtTime(l.last) + "</td>" +
         "<td>" + googleBadge(checks[l.url] && checks[l.url].google) + "</td>" +
         "<td>" + checkBadge(checks[l.url]) + "</td>" +
-        '<td><button class="ghost link-check" data-url="' + escapeHtml(l.url) + '" type="button">Check</button></td>' +
+        '<td class="row-actions">' +
+        '<button class="ghost link-check" data-url="' + escapeHtml(l.url) + '" type="button">Check</button>' +
+        '<a class="ghost link-google" href="https://search.google.com/test/rich-results?url=' + encodeURIComponent(l.url) + '" target="_blank" rel="noopener">Google fetch</a>' +
+        "</td>" +
         "</tr>"
     )
     .join("");
