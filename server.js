@@ -66,6 +66,15 @@ const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, "http://localhost");
   decorate(res);
 
+  if (url.pathname === "/api/health") {
+    return res.status(200).json({
+      ok: true,
+      uptimeSeconds: Math.round(process.uptime()),
+      now: new Date().toISOString(),
+      commit: process.env.RENDER_GIT_COMMIT || null,
+    });
+  }
+
   const handler = handlers[url.pathname];
   if (handler) {
     res.setHeader("Cache-Control", "no-store");
