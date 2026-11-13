@@ -118,14 +118,15 @@
     <div class="table-wrap" id="linksWrap">
       <table>
         <thead>
-          <tr><th>URL</th><th>Last submitted</th><th>Page check</th><th></th></tr>
+          <tr><th>URL</th><th>Last submitted</th><th>Google</th><th>Page check</th><th></th></tr>
         </thead>
         <tbody id="linksBody"></tbody>
       </table>
     </div>
     <p class="footnote">
-      "Page check" fetches the URL as Googlebot and confirms it is reachable, self-canonical and not noindex.
-      It proves the page is ready to be indexed; it cannot prove Google has indexed it — only Search Console can.
+      "Google" reads live index status from Search Console, once it is connected. "Page check" fetches the URL as
+      Googlebot and confirms it is reachable, self-canonical and not noindex — ready to be indexed, not proof that it
+      already is.
     </p>
   </section>
 

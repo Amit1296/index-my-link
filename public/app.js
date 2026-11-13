@@ -241,7 +241,13 @@ function getChecks() {
 
 function saveCheck(url, data) {
   const checks = getChecks();
-  checks[url] = { at: new Date().toISOString(), status: data.status, canonicalOk: data.canonicalOk, noindex: data.noindex };
+  checks[url] = {
+    at: new Date().toISOString(),
+    status: data.status,
+    canonicalOk: data.canonicalOk,
+    noindex: data.noindex,
+    google: data.google || null,
+  };
   localStorage.setItem(CHECKS_KEY, JSON.stringify(checks));
 }
 
@@ -259,11 +265,21 @@ function buildLinkIndex() {
 }
 
 function checkBadge(check) {
-  if (!check) return '<span class="tag">not checked</span>';
-  if (check.status === 200 && check.canonicalOk && !check.noindex) return '<span class="tag ok">200 · indexable</span>';
-  if (check.status === 200 && check.noindex) return '<span class="tag bad">noindex</span>';
-  if (check.status === 200) return '<span class="tag warn">200 · canonical off</span>';
-  return '<span class="tag bad">HTTP ' + check.status + "</span>";
+  if (!check) return '<span class="tag">—</span>';
+  if (check.status !== 200) return '<span class="tag bad">HTTP ' + escapeHtml(check.status || "?") + "</span>";
+  if (check.noindex) return '<span class="tag bad">noindex</span>';
+  if (!check.canonicalOk) return '<span class="tag warn">canonical</span>';
+  return '<span class="tag ok">Ready</span>';
+}
+
+function googleBadge(google) {
+  if (!google) return '<span class="tag">—</span>';
+  if (google.configured === false) return '<span class="tag">not connected</span>';
+  if (google.error) return '<span class="tag bad" title="' + escapeHtml(google.error) + '">error</span>';
+  if (google.verdict === "PASS") return '<span class="tag ok">On Google</span>';
+  if (google.verdict === "FAIL") return '<span class="tag bad">Not on Google</span>';
+  const label = String(google.coverageState || "Unknown").replace(" - ", " · ");
+  return '<span class="tag warn">' + escapeHtml(label) + "</span>";
 }
 
 function renderLinks() {
@@ -278,13 +294,16 @@ function renderLinks() {
   wrap.classList.remove("hidden");
   const checked = links.filter((l) => checks[l.url]);
   const indexable = checked.filter((l) => checks[l.url].status === 200 && checks[l.url].canonicalOk && !checks[l.url].noindex);
-  $("linksSummary").textContent = links.length + " links · " + indexable.length + " verified indexable · " + checked.length + " checked";
+  const onGoogle = checked.filter((l) => checks[l.url].google && checks[l.url].google.verdict === "PASS");
+  $("linksSummary").textContent =
+    links.length + " links · " + indexable.length + " ready · " + onGoogle.length + " on Google · " + checked.length + " checked";
   $("linksBody").innerHTML = links
     .map(
       (l) =>
         "<tr>" +
         '<td class="url">' + escapeHtml(l.url.replace("https://" + HOST, "")) + "</td>" +
         '<td class="muted">' + fmtTime(l.last) + "</td>" +
+        "<td>" + googleBadge(checks[l.url] && checks[l.url].google) + "</td>" +
         "<td>" + checkBadge(checks[l.url]) + "</td>" +
         '<td><button class="ghost link-check" data-url="' + escapeHtml(l.url) + '" type="button">Check</button></td>' +
         "</tr>"
@@ -293,8 +312,11 @@ function renderLinks() {
 }
 
 async function checkLink(url) {
-  const result = await api("/api/check", { url });
-  if (result.status) saveCheck(url, result);
+  const [page, google] = await Promise.all([
+    api("/api/check", { url }).catch(() => null),
+    api("/api/google", { url }).catch(() => null),
+  ]);
+  if (page && page.status) saveCheck(url, { ...page, google: google || null });
 }
 
 async function doLinkCheck(button) {
@@ -334,10 +356,21 @@ async function checkAllLinks() {
 
 function exportCsv() {
   const checks = getChecks();
-  const rows = [["url", "last_submitted", "submissions", "http_status", "canonical_ok", "noindex", "checked_at"]];
+  const rows = [["url", "last_submitted", "submissions", "http_status", "canonical_ok", "noindex", "google_verdict", "google_coverage", "checked_at"]];
   for (const link of buildLinkIndex()) {
     const check = checks[link.url] || {};
-    rows.push([link.url, link.last, link.count, check.status ?? "", check.canonicalOk ?? "", check.noindex ?? "", check.at || ""]);
+    const google = check.google || {};
+    rows.push([
+      link.url,
+      link.last,
+      link.count,
+      check.status ?? "",
+      check.canonicalOk ?? "",
+      check.noindex ?? "",
+      google.verdict ?? (google.configured === false ? "not_connected" : ""),
+      google.coverageState ?? "",
+      check.at || "",
+    ]);
   }
   const csv = rows.map((row) => row.map((v) => '"' + String(v).replace(/"/g, '""') + '"').join(",")).join("\n");
   const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));

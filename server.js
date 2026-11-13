@@ -14,6 +14,7 @@ const handlers = {
   "/api/settings": require("./api/settings"),
   "/api/submit": require("./api/submit"),
   "/api/check": require("./api/check"),
+  "/api/google": require("./api/google"),
   "/api/sitemap": require("./api/sitemap"),
 };
 
