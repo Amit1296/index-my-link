@@ -59,12 +59,12 @@ const server = http.createServer(async (req, res) => {
     });
   }
 
-  if (req.method === "GET") {
+  if (req.method === "GET" || req.method === "HEAD") {
     const rel = url.pathname === "/" ? "index.html" : url.pathname.slice(1);
     const file = path.join(PUBLIC, rel);
     if (file.startsWith(PUBLIC) && TYPES[path.extname(file)] && fs.existsSync(file)) {
       res.writeHead(200, { "Content-Type": TYPES[path.extname(file)], "Cache-Control": "no-store" });
-      return res.end(fs.readFileSync(file));
+      return res.end(req.method === "HEAD" ? undefined : fs.readFileSync(file));
     }
   }
 

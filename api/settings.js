@@ -8,13 +8,12 @@ module.exports = async (req, res) => {
       hasKey: !!key,
       keyPreview: key ? key.slice(0, 4) + "…" + key.slice(-4) : null,
       keyLocked: !!process.env.INDEXNOW_KEY,
-      cloud: !!process.env.VERCEL,
     });
   }
 
   if (req.method === "POST") {
-    if (process.env.VERCEL) {
-      return res.status(403).json({ error: "The key is set by the INDEXNOW_KEY environment variable in Vercel." });
+    if (process.env.INDEXNOW_KEY) {
+      return res.status(403).json({ error: "The key is set by the INDEXNOW_KEY environment variable." });
     }
     const key = String((req.body && req.body.key) || "").trim();
     if (!/^[a-f0-9-]{8,64}$/i.test(key)) {
