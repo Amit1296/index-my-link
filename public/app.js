@@ -11,7 +11,7 @@ const state = {
   onlyUnsubmitted: false,
 };
 
-async function api(path, body) {
+async function request(path, body) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 90000);
   try {
@@ -22,13 +22,31 @@ async function api(path, body) {
       signal: controller.signal,
     });
     const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data.error || "Request failed (HTTP " + res.status + ")");
+    if (!res.ok) {
+      const err = new Error(data.error || "Request failed (HTTP " + res.status + ")");
+      err.status = res.status;
+      throw err;
+    }
     return data;
   } catch (err) {
     if (err.name === "AbortError") throw new Error("The free server was asleep — it can take up to a minute to wake. Click again.");
     throw err;
   } finally {
     clearTimeout(timer);
+  }
+}
+
+// Render's free plan briefly drops the route to a live instance about once a
+// minute; those requests never reach the app, so one quiet retry is safe.
+async function api(path, body) {
+  try {
+    return await request(path, body);
+  } catch (err) {
+    if (err.status === 502 || err.status === 503 || err.status === 504) {
+      await new Promise((resolve) => setTimeout(resolve, 2500));
+      return request(path, body);
+    }
+    throw err;
   }
 }
 
