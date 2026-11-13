@@ -88,6 +88,22 @@ main { max-width: 1040px; margin: 0 auto; padding: 26px 22px 70px; }
 .engine.ok .dot { background: var(--ok); box-shadow: 0 0 0 4px rgba(52, 211, 153, 0.12); }
 .engine.warn .dot { background: var(--warn); box-shadow: 0 0 0 4px rgba(251, 191, 36, 0.12); }
 
+button.engine { width: 100%; font: inherit; text-align: left; color: var(--text); cursor: pointer; }
+button.engine:hover { border-color: rgba(251, 191, 36, 0.45); background: var(--surface-2); }
+
+.google-help {
+  margin: -10px 0 22px;
+  padding: 16px 18px;
+  border: 1px solid rgba(251, 191, 36, 0.28);
+  background: rgba(251, 191, 36, 0.06);
+  border-radius: var(--radius);
+}
+.google-help p { margin: 0; font-size: 13px; }
+.cta { display: inline-block; font-size: 13.5px; font-weight: 600; padding: 10px 16px; border-radius: 10px; }
+.cta.primary { background: var(--accent); color: var(--accent-ink); }
+.cta.ghost { background: var(--surface-2); color: var(--text); border: 1px solid var(--line); }
+.cta:hover { filter: brightness(1.06); }
+
 .tabs { display: flex; gap: 6px; border-bottom: 1px solid var(--line); margin-bottom: 20px; }
 .tab {
   background: none; border: 0; border-bottom: 2px solid transparent;

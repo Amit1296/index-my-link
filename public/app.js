@@ -358,6 +358,10 @@ $("submitSelected").addEventListener("click", () => {
 });
 $("refreshHistory").addEventListener("click", loadHistory);
 $("keyPill").addEventListener("click", openKeyModal);
+$("googleCard").addEventListener("click", () => {
+  const collapsed = $("googleHelp").classList.toggle("hidden");
+  $("googleCard").setAttribute("aria-expanded", String(!collapsed));
+});
 $("saveKey").addEventListener("click", saveKey);
 $("cancelKey").addEventListener("click", closeKeyModal);
 $("keyInput").addEventListener("keydown", (e) => {

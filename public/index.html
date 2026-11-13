@@ -29,11 +29,20 @@
       <span class="dot"></span>
       <div><strong>Yandex · Naver · Seznam</strong><small>IndexNow API — instant</small></div>
     </div>
-    <div class="engine warn">
+    <button class="engine warn" type="button" id="googleCard" aria-expanded="false" aria-controls="googleHelp">
       <span class="dot"></span>
       <div><strong>Google</strong><small>No public submit API — use Search Console sitemap</small></div>
-    </div>
+    </button>
   </section>
+
+  <div id="googleHelp" class="google-help hidden">
+    <p>Google accepts URL submissions from no tool, paid or free. Two manual steps cover it:</p>
+    <div class="actions">
+      <a class="cta primary" href="https://search.google.com/search-console/sitemaps" target="_blank" rel="noopener">Open Sitemaps</a>
+      <a class="cta ghost" href="https://search.google.com/search-console/inspect" target="_blank" rel="noopener">Request indexing</a>
+    </div>
+    <p class="muted" style="margin:12px 0 0">Sitemaps keeps all 366 URLs known to Google. URL Inspection → Request indexing asks for one specific page — about 10–12 per day, and Google still decides.</p>
+  </div>
 
   <nav class="tabs" role="tablist">
     <button class="tab active" data-tab="submit" role="tab">Submit URLs</button>
