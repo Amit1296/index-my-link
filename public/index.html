@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Index My Link — Giftora submission console</title>
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <span class="mark">IML</span>
+    <div>
+      <h1>Index My Link</h1>
+      <p>Submission console for <strong>gift-ora.online</strong></p>
+    </div>
+  </div>
+  <button id="keyPill" class="pill" type="button">Key: checking…</button>
+</header>
+
+<main>
+  <section class="engines" aria-label="What each search engine accepts">
+    <div class="engine ok">
+      <span class="dot"></span>
+      <div><strong>Bing</strong><small>IndexNow API — instant</small></div>
+    </div>
+    <div class="engine ok">
+      <span class="dot"></span>
+      <div><strong>Yandex · Naver · Seznam</strong><small>IndexNow API — instant</small></div>
+    </div>
+    <div class="engine warn">
+      <span class="dot"></span>
+      <div><strong>Google</strong><small>No public submit API — use Search Console sitemap</small></div>
+    </div>
+  </section>
+
+  <nav class="tabs" role="tablist">
+    <button class="tab active" data-tab="submit" role="tab">Submit URLs</button>
+    <button class="tab" data-tab="sitemap" role="tab">From sitemap</button>
+    <button class="tab" data-tab="history" role="tab">History</button>
+  </nav>
+
+  <section id="panel-submit" class="panel active">
+    <div class="card">
+      <label for="urlBox" class="label">Paste URLs — one per line</label>
+      <textarea id="urlBox" spellcheck="false" placeholder="https://gift-ora.online/birthday-gifts.html&#10;https://gift-ora.online/cakes.html&#10;/combo.html"></textarea>
+      <div class="meta-row">
+        <span id="urlCount" class="muted">0 valid · 0 skipped</span>
+        <span class="muted">Max 100 URLs per request · repeated URLs are removed</span>
+      </div>
+      <div class="actions">
+        <button id="submitBtn" class="primary" type="button">Submit for indexing</button>
+        <button id="clearBtn" class="ghost" type="button">Clear</button>
+      </div>
+    </div>
+    <div id="submitResult" class="result hidden"></div>
+    <p class="footnote">
+      A successful submission tells Bing, Yandex, Naver and Seznam to re-crawl the page.
+      It does not force indexing, and Google does not accept URL submissions from any tool —
+      the only honest levers there are the sitemap and Search Console.
+    </p>
+  </section>
+
+  <section id="panel-sitemap" class="panel">
+    <div class="card">
+      <div class="actions spread">
+        <div>
+          <label class="label">Live sitemap</label>
+          <p class="muted" id="sitemapInfo">Not loaded yet.</p>
+        </div>
+        <button id="loadSitemap" class="primary" type="button">Load sitemap.xml</button>
+      </div>
+      <div class="filters hidden" id="sitemapFilters">
+        <input id="sitemapFilter" type="search" placeholder="Filter URLs…" autocomplete="off">
+        <label class="check"><input type="checkbox" id="onlyUnsubmitted"> Only never submitted</label>
+        <button id="selectAll" class="ghost" type="button">Select all visible</button>
+      </div>
+      <div class="table-wrap hidden" id="sitemapWrap">
+        <table>
+          <thead>
+            <tr><th class="col-check"></th><th>URL</th><th>lastmod</th><th>Last submitted</th><th></th></tr>
+          </thead>
+          <tbody id="sitemapBody"></tbody>
+        </table>
+      </div>
+      <div class="actions hidden" id="sitemapActions">
+        <button id="submitSelected" class="primary" type="button">Submit selected</button>
+        <span class="muted" id="selectedCount">0 selected</span>
+      </div>
+    </div>
+    <div id="sitemapResult" class="result hidden"></div>
+  </section>
+
+  <section id="panel-history" class="panel">
+    <div class="card">
+      <div class="actions spread">
+        <div>
+          <label class="label">Submission log</label>
+          <p class="muted">Newest first · saved in this browser only</p>
+        </div>
+        <button id="refreshHistory" class="ghost" type="button">Refresh</button>
+      </div>
+    </div>
+    <div id="historyList" class="history"></div>
+  </section>
+</main>
+
+<div id="keyModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="keyTitle">
+  <div class="modal-card">
+    <h2 id="keyTitle">Add your IndexNow key</h2>
+    <p class="muted">
+      The key is the text in <code>seo/indexnow-key.txt</code> in the Giftora repo — the same value as the
+      filename of <code>https://gift-ora.online/&lt;key&gt;.txt</code>.
+    </p>
+    <input id="keyInput" type="text" spellcheck="false" placeholder="paste key here">
+    <p id="keyError" class="error-text hidden"></p>
+    <div class="actions">
+      <button id="saveKey" class="primary" type="button">Save key</button>
+      <button id="cancelKey" class="ghost" type="button">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

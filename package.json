@@ -1,0 +1,9 @@
+{
+  "name": "index-my-link",
+  "version": "1.0.0",
+  "private": true,
+  "description": "IndexNow submission console for gift-ora.online",
+  "scripts": {
+    "start": "node server.js"
+  }
+}
