@@ -36,17 +36,17 @@ async function request(path, body) {
   }
 }
 
-// Render's free plan briefly drops the route to a live instance about once a
-// minute; those requests never reach the app, so one quiet retry is safe.
+// Render's free plan drops the route to a live instance for ~6-8 s about once
+// a minute; those requests never reach the app, so quiet retries are safe.
 async function api(path, body) {
-  try {
-    return await request(path, body);
-  } catch (err) {
-    if (err.status === 502 || err.status === 503 || err.status === 504) {
-      await new Promise((resolve) => setTimeout(resolve, 2500));
-      return request(path, body);
+  for (let attempt = 0; ; attempt += 1) {
+    try {
+      return await request(path, body);
+    } catch (err) {
+      const edge = err.status === 502 || err.status === 503 || err.status === 504;
+      if (!edge || attempt >= 2) throw err;
+      await new Promise((resolve) => setTimeout(resolve, attempt === 0 ? 3000 : 4000));
     }
-    throw err;
   }
 }
 
