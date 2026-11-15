@@ -348,14 +348,18 @@ function renderGoogleSitemaps(r) {
     el.textContent = "Could not read Google's sitemaps: " + r.error;
     return;
   }
-  const s = r.sitemaps[0];
-  const counts = s.contents
-    .map((c) => c.submitted + " URLs" + (c.indexed != null ? " · " + c.indexed + " indexed" : ""))
-    .join(" · ");
+  const s = r.sitemaps.find((x) => /\/sitemap\.xml$/.test(x.path)) || r.sitemaps[0];
+  if (!s.lastDownloaded) {
+    el.textContent = "Google has not downloaded " + s.path.replace("https://gift-ora.online", "") + " yet — submit it in Search Console → Sitemaps.";
+    return;
+  }
+  const days = Math.round((Date.now() - new Date(s.lastDownloaded)) / 86400000);
+  const submitted = s.contents.reduce((sum, c) => sum + c.submitted, 0);
   el.textContent =
-    "Google last read " + s.path.replace("https://gift-ora.online", "") + " on " + fmtTime(s.lastDownloaded) +
-    (counts ? " · " + counts : "") +
-    (s.errors ? " · " + s.errors + " error(s)" : "") +
+    "Google last read " + s.path.replace("https://gift-ora.online", "") + " " +
+    (days === 0 ? "today" : days === 1 ? "yesterday" : days + " days ago") +
+    " (" + fmtTime(s.lastDownloaded) + ") · " + submitted + " URLs declared" +
+    (s.errors ? " · " + s.errors + " error(s)" : " · no errors") +
     (s.warnings ? " · " + s.warnings + " warning(s)" : "") +
     (s.isPending ? " · download pending" : "");
 }
