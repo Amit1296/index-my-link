@@ -315,8 +315,11 @@ function renderLinks() {
   const checked = links.filter((l) => checks[l.url]);
   const indexable = checked.filter((l) => checks[l.url].status === 200 && checks[l.url].canonicalOk && !checks[l.url].noindex);
   const onGoogle = checked.filter((l) => checks[l.url].google && checks[l.url].google.verdict === "PASS");
+  const unknown = checked.filter((l) => (checks[l.url].google || {}).coverageState === "URL is unknown to Google");
+  const notIndexed = checked.filter((l) => /currently not indexed/i.test((checks[l.url].google || {}).coverageState || ""));
   $("linksSummary").textContent =
-    links.length + " links · " + indexable.length + " ready · " + onGoogle.length + " on Google · " + checked.length + " checked";
+    links.length + " links · " + indexable.length + " ready · " + onGoogle.length + " on Google · " +
+    unknown.length + " unknown to Google · " + notIndexed.length + " crawled but not indexed · " + checked.length + " checked";
   $("linksBody").innerHTML = links
     .map(
       (l) =>
@@ -328,10 +331,47 @@ function renderLinks() {
         '<td class="row-actions">' +
         '<button class="ghost link-check" data-url="' + escapeHtml(l.url) + '" type="button">Check</button>' +
         '<a class="ghost link-google" title="Opens Google\'s Rich Results Test — needs a signed-in Google account" href="https://search.google.com/test/rich-results?url=' + encodeURIComponent(l.url) + '" target="_blank" rel="noopener">Google fetch</a>' +
+        '<a class="ghost link-request" title="Opens Search Console with this URL filled in — click Request indexing there" href="https://search.google.com/search-console/inspect?resource_id=https%3A%2F%2Fgift-ora.online%2F&amp;id=' + encodeURIComponent(l.url) + '" target="_blank" rel="noopener">Request indexing</a>' +
         "</td>" +
         "</tr>"
     )
     .join("");
+}
+
+function renderGoogleSitemaps(r) {
+  const el = $("gsmResult");
+  if (!r.configured) {
+    el.textContent = "Search Console is not connected.";
+    return;
+  }
+  if (r.error) {
+    el.textContent = "Could not read Google's sitemaps: " + r.error;
+    return;
+  }
+  const s = r.sitemaps[0];
+  const counts = s.contents
+    .map((c) => c.submitted + " URLs" + (c.indexed != null ? " · " + c.indexed + " indexed" : ""))
+    .join(" · ");
+  el.textContent =
+    "Google last read " + s.path.replace("https://gift-ora.online", "") + " on " + fmtTime(s.lastDownloaded) +
+    (counts ? " · " + counts : "") +
+    (s.errors ? " · " + s.errors + " error(s)" : "") +
+    (s.warnings ? " · " + s.warnings + " warning(s)" : "") +
+    (s.isPending ? " · download pending" : "");
+}
+
+async function checkGoogleSitemaps() {
+  const btn = $("gsmBtn");
+  btn.disabled = true;
+  btn.textContent = "Checking…";
+  try {
+    renderGoogleSitemaps(await api("/api/google-sitemaps"));
+  } catch (err) {
+    $("gsmResult").textContent = "Could not check: " + err.message;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Check Google's sitemap";
+  }
 }
 
 async function checkLink(url) {
@@ -563,6 +603,7 @@ $("refreshHistory").addEventListener("click", loadHistory);
 $("checkAllBtn").addEventListener("click", checkAllLinks);
 $("exportBtn").addEventListener("click", exportCsv);
 $("keyPill").addEventListener("click", openKeyModal);
+$("gsmBtn").addEventListener("click", checkGoogleSitemaps);
 $("googleCard").addEventListener("click", () => {
   const collapsed = $("googleHelp").classList.toggle("hidden");
   $("googleCard").setAttribute("aria-expanded", String(!collapsed));

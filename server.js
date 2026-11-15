@@ -17,6 +17,7 @@ const handlers = {
   "/api/submit": require("./api/submit"),
   "/api/check": require("./api/check"),
   "/api/google": require("./api/google"),
+  "/api/google-sitemaps": require("./api/google-sitemaps"),
   "/api/sitemap": require("./api/sitemap"),
 };
 

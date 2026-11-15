@@ -41,7 +41,11 @@
       <a class="cta primary" href="https://search.google.com/search-console/sitemaps" target="_blank" rel="noopener">Open Sitemaps</a>
       <a class="cta ghost" href="https://search.google.com/search-console/inspect" target="_blank" rel="noopener">Request indexing</a>
     </div>
-    <p class="muted" style="margin:12px 0 0">Sitemaps keeps all 366 URLs known to Google. URL Inspection → Request indexing asks for one specific page — about 10–12 per day, and Google still decides.</p>
+    <div class="actions" style="margin-top:12px">
+      <button id="gsmBtn" class="cta ghost" type="button">Check Google's sitemap</button>
+    </div>
+    <p id="gsmResult" class="muted" style="margin:12px 0 0"></p>
+    <p class="muted" style="margin:12px 0 0">Google must download sitemap.xml before it knows these URLs — the button above shows when it last did. URL Inspection → Request indexing asks for one specific page — about 10–12 per day, and Google still decides.</p>
   </div>
 
   <nav class="tabs" role="tablist">
@@ -128,7 +132,8 @@
       "Google" reads live index status from Search Console. "Page check" fetches the URL from this server with
       Googlebot's user-agent — no request goes to Google — and confirms it is reachable, self-canonical and not
       noindex: ready to be indexed, not proof that it already is. "Google fetch" opens Google's own Rich Results Test, which makes Googlebot fetch the page — the same
-      fetch a paid "Google submission" produces. It needs you to be signed into a Google account.
+      fetch a paid "Google submission" produces. It needs you to be signed into a Google account. "Request indexing"
+      opens Search Console with that URL filled in, ready for the one button only Google offers.
     </p>
   </section>
 
